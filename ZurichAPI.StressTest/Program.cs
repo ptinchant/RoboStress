@@ -13,6 +13,7 @@ namespace ZurichAPI.StressTest
     {
         static void Main(string[] args)
         {
+
             string executions = string.Empty;
             long initialOrder = 0;
             long initialQuote = 0;
@@ -42,28 +43,40 @@ namespace ZurichAPI.StressTest
             string fileName = string.Format("Logs\\{0}_log.csv", DateTime.Now.ToString("ddMMyyyy_HHmmss"));
             Stress stress = new Stress(fileName);
             List<Task> tasks = new List<Task>();
-            var result = Parallel.For(1, execs + 1, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount == 1 ? 1 : Environment.ProcessorCount - 1 }, i =>
-                 {
-                     stress.Execute(GetData(initialOrder, initialQuote), i);
-                     initialOrder++;
-                     initialQuote++;
-                 });
+            long currentQuote = initialQuote;
+            DateTime sDate = DateTime.Now;
 
-            stress.CloseFile();
-            Console.WriteLine("Finalizado Pressione alguma tecla para encerrar...", Stress.executingItens);
+            var x = execs / 9;
+            if (execs % 9 > 0)
+            {
+                x++;
+            }
+            var result = Parallel.For(1, x + 1, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount == 1 ? 1 : Environment.ProcessorCount - 1 }, i =>
+                 {
+                     
+                     stress.Execute(GetData(initialOrder + i - 1), initialQuote, i);
+
+                     
+                 });
+            DateTime fDate = DateTime.Now;
+            stress.CloseFile((execs * 9) / (fDate - sDate).TotalSeconds);
+
+            Console.WriteLine("");
+            Console.WriteLine("Execução levou " + (fDate - sDate).TotalSeconds + " Segundos");
+            Console.WriteLine("Pressione alguma tecla para encerrar...", Stress.executingItens);
 
             Console.ReadLine();
         }
 
-        private static string GetData(long pedido, long cotacao)
+        private static string GetData(long pedido)
         {
             StringBuilder result = new StringBuilder();
 
             result.AppendLine("{");
             result.AppendLine("\"DataAtual\": \"" + DateTime.Now.ToString("yyyy-MM-dd") + "\",");
-            result.AppendLine("\"NumeroCotacao\": \"" + cotacao.ToString().PadLeft(15, '0').Substring(0, 15) + "\",");
+            result.AppendLine("\"NumeroCotacao\": \"@quote\",");
             result.AppendLine("\"NumeroPedido\": \"" + pedido.ToString().PadLeft(10, '0').Substring(0, 10) + "\",");
-            result.AppendLine("\"DataValidadeCotacaoz\": \"" + DateTime.Now.AddDays(30).ToString("yyyy-MM-dd") + "\",");
+            result.AppendLine("\"DataValidadeCotacao\": \"" + DateTime.Now.AddDays(30).ToString("yyyy-MM-dd") + "\",");
             result.AppendLine("\"CodigoProduto\": \"56\",");
             result.AppendLine("\"CodigoSubProduto\": \"1862\",");
             result.AppendLine("\"CodigoSeguradora\": \"0026\",");
